@@ -1,0 +1,174 @@
+<html>
+<head>
+<style>
+	
+:root {
+  --card-unselected: dodgerblue;
+  --card-selected:  green;
+  --card-completed: grey;
+  --card-wrong: red;	
+}
+	
+	   
+body {
+  background-color: lightblue;
+}
+
+.cards { grid-template-columns: repeat(4, 1fr); }
+ 
+.card {
+  background-color: var(--card-unselected);
+  color: white;
+  font-size: 20px;
+  padding: 1rem;
+  height: 2rem;
+}
+
+
+.cards {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-gap: 1rem;
+}
+
+.blue{ 
+  color : blue;
+}
+
+.selected {
+  background-color: var(--card-selected);
+}
+
+.completed { 
+   background-color: var(--card-completed);
+}
+.wrong {
+  background: red;
+}
+</style>
+</head>	
+<body>
+	
+<div data-other-attr="-99" class="cards" id="top">
+</div>
+
+<script>
+	
+function fisherYatesShuffle(arr){
+    for(var i =arr.length-1 ; i>0 ;i--){
+        var j = Math.floor( Math.random() * (i + 1) ); //random index
+        [arr[i],arr[j]]=[arr[j],arr[i]]; // swap
+    }
+}
+  
+let data = [ "A1,B1",
+             "A2,B2", 
+             "A3,B3",
+             "A4,B4", ]
+             
+function convert() {
+   let workWith = []
+   let temp = {  text: "11111",
+                 present :1,
+                 completed: false,
+    } 
+   data.forEach( (item,index) => { 
+      let [a,b] = item.split(",")
+       workWith.push( {...temp,
+                      identity: index,
+                      text:a })
+       workWith.push( {...temp,
+                      identity: index,
+                      text:b })
+        
+     
+    })
+    fisherYatesShuffle(workWith)
+    return workWith
+}	
+
+  const cards = convert();
+  let handleToFirstOfPair = 0   
+  let indexToFirstOfPair = 0
+
+  let currentCardIndentity = -99
+  function setcurrentCardIndentity(x) {
+	   currentCardIndentity = x
+   }
+
+  let state = "START"
+  function setState(x) {
+	  state = x
+   }
+
+  const START = "START"
+  const WAIT = "WAIT"
+  
+
+  function restore(event,text) {
+	  event.srcElement.innerHTML = text
+	  event.srcElement.classList.remove('wrong')
+	  document.getElementById("top").addEventListener("click", steps);	
+  }
+
+  function steps(event ){ 
+	let index = event.target.getAttribute('data-other-attr')  
+	
+	if  (index == -99 || cards[index].completed === true ) {  return }
+	
+	switch(state) {
+	  case START: {
+	    setcurrentCardIndentity(cards[index].identity)
+            handleToFirstOfPair = event
+            indexToFirstOfPair = index
+            event.srcElement.classList.add('selected')
+            setState(WAIT)
+	    break  
+	}
+  
+       case WAIT: {
+          if ( indexToFirstOfPair=== index) {
+	     event.srcElement.classList.remove('selected')
+	     setState(START)
+          } 
+          else {
+           if ( cards[index].identity === currentCardIndentity) {
+              event.srcElement.innerHTML = "" //clear card
+	      event.srcElement.classList.add('completed')
+              cards[index].completed = true
+              handleToFirstOfPair.srcElement.innerHTML = "" //clear card 
+	      handleToFirstOfPair.srcElement.classList.add('completed')
+              cards[indexToFirstOfPair].completed = true
+              setState(START)
+           } else {
+			 event.srcElement.classList.remove('selected')
+			 let originalText = event.srcElement.innerHTML
+			 event.srcElement.innerHTML ="wrong"
+			 event.srcElement.classList.add('wrong')
+			 document.getElementById("top").removeEventListener("click", steps);	
+			 setTimeout( () => {restore(event,originalText)}, 2000)
+           }
+         }
+      break
+      }
+      default: { }
+    }
+}
+	
+
+document.getElementById("top").addEventListener("click", steps);	
+	
+function genHTML() {
+	return cards.reduce( (res, item,index) => {  
+		return res + `<div class="card" data-other-attr="${index}">${item.text}</div>`
+		
+	 }, "")
+	
+}	
+
+document.getElementById("top", false).innerHTML  = genHTML()
+</script>
+
+</body>
+</html>
